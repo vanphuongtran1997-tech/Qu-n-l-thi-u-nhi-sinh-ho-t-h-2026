@@ -1,0 +1,139 @@
+import { Student } from '@/types';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import html2pdf from 'html2pdf.js';
+import { Download, Printer } from 'lucide-react';
+import { useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+
+interface PrintCardDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  student: Student | null;
+}
+
+export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialogProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  if (!student) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportPDF = () => {
+    const element = document.getElementById('print-card-preview');
+    if (!element) return;
+    const opt = {
+      margin: 5,
+      filename: `The_Thieu_Nhi_${student.name}.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: { scale: 3, useCORS: true },
+      jsPDF: { unit: 'mm', format: [96, 64], orientation: 'landscape' } // Card size + margin
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+
+  // Generate a JSON string containing the essential info for scanning/attendance
+  const qrData = JSON.stringify({
+    id: student.id,
+    name: student.name,
+    class: student.catechismClass
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader className="print-hide">
+          <DialogTitle>In Thẻ Học Sinh</DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex flex-col items-center justify-center py-6 bg-neutral-100 rounded-lg print-hide">
+          <p className="text-sm text-neutral-500 mb-4">Xem trước thẻ (Kích thước thực: ~86mm x 54mm)</p>
+          
+          {/* Card Container - designed to look like ATM card ratio ~1.58 */}
+          <div 
+            id="print-card-preview"
+            className="w-[340px] h-[215px] bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden relative print-document"
+            style={{ 
+              backgroundImage: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
+            }}
+            ref={cardRef}
+          >
+            {/* Header branding */}
+            <div className="bg-blue-600 h-12 w-full flex items-center justify-center">
+              <h2 className="text-white font-bold text-sm tracking-widest uppercase">Thẻ Thiếu Nhi Sinh Hoạt Hè</h2>
+            </div>
+            
+            <div className="p-4 flex gap-4 h-[calc(100%-48px)]">
+              {/* Left Column: Photo */}
+              <div className="flex flex-col items-center justify-start h-full w-24">
+                {student.avatarUrl ? (
+                  <img 
+                    src={student.avatarUrl} 
+                    alt={student.name} 
+                    className="w-20 h-24 object-cover border-2 border-white shadow-sm"
+                  />
+                ) : (
+                  <div className="w-20 h-24 bg-neutral-200 border-2 border-white shadow-sm flex items-center justify-center text-neutral-400">
+                    Ảnh
+                  </div>
+                )}
+                <div className="text-[10px] text-neutral-500 mt-2 text-center uppercase leading-tight font-semibold">
+                  Mã: {student.id.toUpperCase()}
+                </div>
+              </div>
+              
+              {/* Right Column: Information */}
+              <div className="flex-1 flex flex-col justify-start pt-1 space-y-1.5 h-full relative">
+                <div className="mb-2 pr-12">
+                  <div className="text-[10px] text-blue-600 font-bold uppercase">Họ và tên</div>
+                  <div className="font-bold text-[15px] leading-tight text-neutral-900">{student.name}</div>
+                </div>
+                
+                {/* QR Code in top right of details */}
+                <div className="absolute top-1 right-0 border border-neutral-200 p-1 bg-white rounded">
+                  <QRCodeSVG value={qrData} size={48} level="M" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 mt-2">
+                  <div>
+                    <div className="text-[9px] text-neutral-500 uppercase">Ngày sinh</div>
+                    <div className="font-semibold text-xs">{new Date(student.dateOfBirth).toLocaleDateString('vi-VN')}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-neutral-500 uppercase">Giới tính</div>
+                    <div className="font-semibold text-xs">{student.gender === 'Male' ? 'Nam' : student.gender === 'Female' ? 'Nữ' : 'Khác'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-neutral-500 uppercase">Trường/Lớp</div>
+                    <div className="font-semibold text-xs">{student.grade}</div>
+                  </div>
+                  <div>
+                    <div className="text-[9px] text-neutral-500 uppercase">Giáo lý</div>
+                    <div className="font-semibold text-xs text-blue-700">{student.catechismClass}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter className="print-hide">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Đóng
+          </Button>
+          <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
+            <Printer className="mr-2 h-4 w-4" /> In Thẻ Ngay
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
