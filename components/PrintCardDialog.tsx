@@ -28,15 +28,17 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
   };
 
   const handleExportPDF = () => {
-    const element = document.getElementById('print-card-preview');
+    const element = document.getElementById('print-card-content');
     if (!element) return;
+    
     const opt = {
-      margin: 5,
+      margin: 0,
       filename: `The_Thieu_Nhi_${student.name}.pdf`,
       image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 3, useCORS: true },
-      jsPDF: { unit: 'mm', format: [96, 64], orientation: 'landscape' } // Card size + margin
+      html2canvas: { scale: 3, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: [86, 54], orientation: 'landscape' }
     };
+    
     html2pdf().set(opt).from(element).save();
   };
 
@@ -49,7 +51,7 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] overflow-hidden">
         <DialogHeader className="print-hide">
           <DialogTitle>In Thẻ Học Sinh</DialogTitle>
         </DialogHeader>
@@ -57,83 +59,100 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
         <div className="flex flex-col items-center justify-center py-6 bg-neutral-100 rounded-lg print-hide">
           <p className="text-sm text-neutral-500 mb-4">Xem trước thẻ (Kích thước thực: ~86mm x 54mm)</p>
           
-          {/* Card Container - designed to look like ATM card ratio ~1.58 */}
-          <div 
-            id="print-card-preview"
-            className="w-[340px] h-[215px] bg-white rounded-xl shadow-lg border border-neutral-200 overflow-hidden relative print-document"
-            style={{ 
-              backgroundImage: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
-            }}
-            ref={cardRef}
-          >
-            {/* Header branding */}
-            <div className="bg-blue-600 h-12 w-full flex items-center justify-center">
-              <h2 className="text-white font-bold text-sm tracking-widest uppercase">Thẻ Thiếu Nhi Sinh Hoạt Hè</h2>
-            </div>
-            
-            <div className="p-4 flex gap-4 h-[calc(100%-48px)]">
-              {/* Left Column: Photo */}
-              <div className="flex flex-col items-center justify-start h-full w-24">
-                {student.avatarUrl ? (
-                  <img 
-                    src={student.avatarUrl} 
-                    alt={student.name} 
-                    className="w-20 h-24 object-cover border-2 border-white shadow-sm"
-                  />
-                ) : (
-                  <div className="w-20 h-24 bg-neutral-200 border-2 border-white shadow-sm flex items-center justify-center text-neutral-400">
-                    Ảnh
-                  </div>
-                )}
-                <div className="text-[10px] text-neutral-500 mt-2 text-center uppercase leading-tight font-semibold">
-                  Mã: {student.id.toUpperCase()}
-                </div>
-              </div>
-              
-              {/* Right Column: Information */}
-              <div className="flex-1 flex flex-col justify-start pt-1 space-y-1.5 h-full relative">
-                <div className="mb-2 pr-12">
-                  <div className="text-[10px] text-blue-600 font-bold uppercase">Họ và tên</div>
-                  <div className="font-bold text-[15px] leading-tight text-neutral-900">{student.name}</div>
-                </div>
-                
-                {/* QR Code in top right of details */}
-                <div className="absolute top-1 right-0 border border-neutral-200 p-1 bg-white rounded">
-                  <QRCodeSVG value={qrData} size={48} level="M" />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 mt-2">
-                  <div>
-                    <div className="text-[9px] text-neutral-500 uppercase">Ngày sinh</div>
-                    <div className="font-semibold text-xs">{new Date(student.dateOfBirth).toLocaleDateString('vi-VN')}</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-neutral-500 uppercase">Giới tính</div>
-                    <div className="font-semibold text-xs">{student.gender === 'Male' ? 'Nam' : student.gender === 'Female' ? 'Nữ' : 'Khác'}</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-neutral-500 uppercase">Trường/Lớp</div>
-                    <div className="font-semibold text-xs">{student.grade}</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-neutral-500 uppercase">Giáo lý</div>
-                    <div className="font-semibold text-xs text-blue-700">{student.catechismClass}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Card Preview in Dialog */}
+          <StudentCardPreview student={student} qrData={qrData} />
         </div>
         
         <DialogFooter className="print-hide">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Đóng
           </Button>
+          <Button onClick={handleExportPDF} className="bg-green-600 hover:bg-green-700">
+            <Download className="mr-2 h-4 w-4" /> Xuất PDF
+          </Button>
           <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
             <Printer className="mr-2 h-4 w-4" /> In Thẻ Ngay
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Hidden print document for both window.print and html2pdf */}
+      <div className="hidden">
+        <div id="print-card-content" className="print-document">
+          <StudentCardPreview student={student} qrData={qrData} printMode />
+        </div>
+      </div>
     </Dialog>
+  );
+}
+
+function StudentCardPreview({ student, qrData, printMode = false }: { student: Student; qrData: string; printMode?: boolean }) {
+  return (
+    <div 
+      className={`w-[340px] h-[215px] bg-white rounded-xl overflow-hidden relative ${printMode ? 'border-0' : 'shadow-lg border border-neutral-200'}`}
+      style={{ 
+        backgroundImage: 'linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%)',
+        width: printMode ? '86mm' : '340px',
+        height: printMode ? '54mm' : '215px',
+      }}
+    >
+      {/* Header branding */}
+      <div className="bg-blue-600 h-12 w-full flex items-center justify-center -webkit-print-color-adjust-exact print-color-adjust-exact" style={{ height: printMode ? '12mm' : '48px' }}>
+        <h2 className="text-white font-bold text-sm tracking-widest uppercase" style={{ fontSize: printMode ? '3.5mm' : '14px' }}>Thẻ Thiếu Nhi Sinh Hoạt Hè</h2>
+      </div>
+      
+      <div className="p-4 flex gap-4 h-[calc(100%-48px)]" style={{ padding: printMode ? '3mm' : '16px', gap: printMode ? '3mm' : '16px' }}>
+        {/* Left Column: Photo */}
+        <div className="flex flex-col items-center justify-start h-full" style={{ width: printMode ? '22mm' : '96px' }}>
+          {student.avatarUrl ? (
+            <img 
+              src={student.avatarUrl} 
+              alt={student.name} 
+              className="object-cover border-2 border-white shadow-sm"
+              style={{ width: printMode ? '20mm' : '80px', height: printMode ? '24mm' : '96px' }}
+            />
+          ) : (
+            <div className="bg-neutral-200 border-2 border-white shadow-sm flex items-center justify-center text-neutral-400" style={{ width: printMode ? '20mm' : '80px', height: printMode ? '24mm' : '96px' }}>
+              Ảnh
+            </div>
+          )}
+          <div className="text-neutral-500 mt-2 text-center uppercase leading-tight font-semibold" style={{ fontSize: printMode ? '2mm' : '10px' }}>
+            Mã: {student.id.toUpperCase()}
+          </div>
+        </div>
+        
+        {/* Right Column: Information */}
+        <div className="flex-1 flex flex-col justify-start pt-1 space-y-1.5 h-full relative">
+          <div className="mb-2 pr-12">
+            <div className="text-blue-600 font-bold uppercase" style={{ fontSize: printMode ? '2mm' : '10px' }}>Họ và tên</div>
+            <div className="font-bold leading-tight text-neutral-900" style={{ fontSize: printMode ? '4mm' : '15px' }}>{student.name}</div>
+          </div>
+          
+          {/* QR Code in top right of details */}
+          <div className="absolute top-1 right-0 border border-neutral-200 p-1 bg-white rounded">
+            <QRCodeSVG value={qrData} size={printMode ? 44 : 48} level="M" />
+          </div>
+          
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 mt-2">
+            <div>
+              <div className="text-neutral-500 uppercase" style={{ fontSize: printMode ? '1.8mm' : '9px' }}>Ngày sinh</div>
+              <div className="font-semibold" style={{ fontSize: printMode ? '2.5mm' : '12px' }}>{new Date(student.dateOfBirth).toLocaleDateString('vi-VN')}</div>
+            </div>
+            <div>
+              <div className="text-neutral-500 uppercase" style={{ fontSize: printMode ? '1.8mm' : '9px' }}>Giới tính</div>
+              <div className="font-semibold" style={{ fontSize: printMode ? '2.5mm' : '12px' }}>{student.gender === 'Male' ? 'Nam' : student.gender === 'Female' ? 'Nữ' : 'Khác'}</div>
+            </div>
+            <div>
+              <div className="text-neutral-500 uppercase" style={{ fontSize: printMode ? '1.8mm' : '9px' }}>Trường/Lớp</div>
+              <div className="font-semibold" style={{ fontSize: printMode ? '2.5mm' : '12px' }}>{student.grade}</div>
+            </div>
+            <div>
+              <div className="text-neutral-500 uppercase" style={{ fontSize: printMode ? '1.8mm' : '9px' }}>Giáo lý</div>
+              <div className="font-semibold text-blue-700" style={{ fontSize: printMode ? '2.5mm' : '12px' }}>{student.catechismClass}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

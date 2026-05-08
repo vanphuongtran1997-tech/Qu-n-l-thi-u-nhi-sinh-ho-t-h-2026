@@ -25,25 +25,18 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
   };
 
   const handleExportPDF = () => {
-    // For multiple cards, we can try to target the grid.
-    const element = document.getElementById('pdf-multiple-cards');
+    const element = document.getElementById('pdf-multiple-cards-export');
     if (!element) return;
     
-    // Temporarily remove hidden class from the print document container
-    element.classList.remove('hidden', 'print:block');
-    
     const opt = {
-      margin: 10,
-      filename: `The_Thieu_Nhi_Nhieu.pdf`,
+      margin: 5,
+      filename: `The_Thieu_Nhi_Hang_Loat.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    html2pdf().set(opt).from(element).save().then(() => {
-      // Restore hidden classes after generating PDF
-      element.classList.add('hidden', 'print:block');
-    });
+    html2pdf().set(opt).from(element).save();
   };
 
   return (
@@ -79,16 +72,17 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
             <Printer className="mr-2 h-4 w-4" /> Bắt đầu in
           </Button>
         </DialogFooter>
+      </DialogContent>
 
-        {/* This div is only visible on print */}
-        <div id="pdf-multiple-cards" className="hidden print:block print-document bg-white">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-4" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '10mm', width: '210mm', padding: '10mm' }}>
+      <div className="hidden">
+        <div id="pdf-multiple-cards-export" className="print-document bg-white w-[210mm] p-[10mm]">
+          <div className="grid grid-cols-2 gap-[10mm]">
             {students.map(student => (
               <StudentCardPreview key={student.id} student={student} printMode />
             ))}
           </div>
         </div>
-      </DialogContent>
+      </div>
     </Dialog>
   );
 }

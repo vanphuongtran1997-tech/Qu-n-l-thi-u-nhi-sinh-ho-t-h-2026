@@ -3,60 +3,34 @@
 @media print {
   /* Reset margins for printing */
   @page {
-    margin: 5mm;
+    margin: 10mm;
     size: auto;
   }
 
-  /* Make sure the main interface is gone, not taking up space */
-  .print-hide {
+  /* Hide everything except portals and the print document */
+  body > *:not([role="region"]):not([role="dialog"]):not(.print-document) {
     display: none !important;
   }
 
-  /* Target specifically our print card preview */
-  #print-card-preview {
-    position: fixed;
-    left: 10mm;
-    top: 10mm;
-    box-shadow: none !important;
-    border: 1px solid #ccc !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    z-index: 999999;
-  }
-  
-  [role="dialog"] {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    position: static !important;
-    transform: none !important;
-    max-width: none !important;
-    width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    inset: 0 !important;
-  }
-  
-  [data-state="open"] {
-    position: static !important;
-    transform: none !important;
-  }
-  
-  /* Hide the dark overlay */
-  div[data-aria-hidden="true"],
-  .fixed.inset-0.bg-black\/80 {
+  /* If we are inside a dialog, we want to hide parts of it too */
+  [role="dialog"] .print-hide {
     display: none !important;
   }
 
   .print-document {
-    -webkit-print-color-adjust: exact;
-    color-adjust: exact;
-    background: white;
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    background: white !important;
+    visibility: visible !important;
   }
 
-  /* Hide root element when a dialog is opened during print to prevent overlapping */
-  body:has([role="dialog"]) > div#root {
-    display: none !important;
+  /* Ensure colors are printed */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 @import "tw-animate-css";

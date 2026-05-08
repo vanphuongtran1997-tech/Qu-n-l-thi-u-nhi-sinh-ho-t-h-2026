@@ -39,13 +39,13 @@ export function PrintClassDialog({
   };
 
   const handleExportPDF = () => {
-    const element = document.getElementById('pdf-class-content');
+    const element = document.getElementById('pdf-class-export');
     if (!element) return;
     const opt = {
       margin: 10,
       filename: `Bao_Cao_${type}_${subject?.name || 'Class'}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();
@@ -68,16 +68,14 @@ export function PrintClassDialog({
         
         <div className="print-hide overflow-x-auto pb-4">
           <div className="bg-white min-w-[210mm] min-h-[297mm] shadow-lg border border-neutral-200 mx-auto origin-top" style={{ transform: 'scale(0.85)', transformOrigin: 'top center', marginBottom: '-15%' }}>
-            <div id="pdf-class-content">
-              <ClassPrint 
-                type={type}
-                subject={subject}
-                students={students}
-                enrollments={enrollments}
-                attendances={attendances}
-                attendanceDate={attendanceDate}
-              />
-            </div>
+            <ClassPrint 
+              type={type}
+              subject={subject}
+              students={students}
+              enrollments={enrollments}
+              attendances={attendances}
+              attendanceDate={attendanceDate}
+            />
           </div>
         </div>
         
@@ -94,15 +92,17 @@ export function PrintClassDialog({
         </DialogFooter>
       </DialogContent>
 
-      <div className="hidden print:block print-document bg-white">
-        <ClassPrint 
-          type={type}
-          subject={subject}
-          students={students}
-          enrollments={enrollments}
-          attendances={attendances}
-          attendanceDate={attendanceDate}
-        />
+      <div className="hidden">
+        <div id="pdf-class-export" className="print-document bg-white">
+          <ClassPrint 
+            type={type}
+            subject={subject}
+            students={students}
+            enrollments={enrollments}
+            attendances={attendances}
+            attendanceDate={attendanceDate}
+          />
+        </div>
       </div>
     </Dialog>
   );

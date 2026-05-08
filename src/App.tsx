@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button';
 
 export default function App() {
   const [user, setUser] = useState<{ username: string; loginName: string; role: 'Admin' | 'Teacher' } | null>(null);
-  const [username, setUsername] = useState('Admin');
-  const [password, setPassword] = useState('admin123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
   const [students, setStudents] = useState<Student[]>([]);

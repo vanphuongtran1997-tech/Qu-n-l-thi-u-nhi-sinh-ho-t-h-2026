@@ -25,13 +25,13 @@ export function PrintListDialog({ open, onOpenChange, students }: PrintListDialo
   };
 
   const handleExportPDF = () => {
-    const element = document.getElementById('pdf-list-content');
+    const element = document.getElementById('pdf-list-export');
     if (!element) return;
     const opt = {
       margin: 10,
       filename: `Danh_Sach_Thieu_Nhi.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     html2pdf().set(opt).from(element).save();
@@ -47,9 +47,7 @@ export function PrintListDialog({ open, onOpenChange, students }: PrintListDialo
         
         <div className="print-hide overflow-x-auto pb-4">
           <div className="bg-white min-w-[210mm] min-h-[297mm] shadow-lg border border-neutral-200 mx-auto origin-top" style={{ transform: 'scale(0.85)', transformOrigin: 'top center', marginBottom: '-15%' }}>
-            <div id="pdf-list-content">
-              <StudentListPrint students={students} />
-            </div>
+            <StudentListPrint students={students} />
           </div>
         </div>
         
@@ -66,8 +64,10 @@ export function PrintListDialog({ open, onOpenChange, students }: PrintListDialo
         </DialogFooter>
       </DialogContent>
 
-      <div className="hidden print:block print-document bg-white">
-        <StudentListPrint students={students} />
+      <div className="hidden">
+        <div id="pdf-list-export" className="print-document bg-white">
+          <StudentListPrint students={students} />
+        </div>
       </div>
     </Dialog>
   );
