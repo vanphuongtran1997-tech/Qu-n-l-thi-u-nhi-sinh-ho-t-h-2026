@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Download, Printer } from 'lucide-react';
 import { StudentListPrint } from './StudentListPrint';
 
@@ -24,17 +25,41 @@ export function PrintListDialog({ open, onOpenChange, students }: PrintListDialo
     window.print();
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const element = document.getElementById('pdf-list-export');
     if (!element) return;
-    const opt = {
-      margin: 10,
-      filename: `Danh_Sach_Thieu_Nhi.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opt).from(element).save();
+    
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      letterRendering: true,
+      backgroundColor: '#ffffff'
+    });
+    
+    const imgWidth = 210;
+    const pageHeight = 297;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    });
+    
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    
+    pdf.save(`Danh_Sach_Thieu_Nhi.pdf`);
   };
 
   return (
@@ -64,8 +89,8 @@ export function PrintListDialog({ open, onOpenChange, students }: PrintListDialo
         </DialogFooter>
       </DialogContent>
 
-      <div className="hidden">
-        <div id="pdf-list-export" className="print-document bg-white">
+      <div className="absolute top-[-9999px] left-[-9999px]">
+        <div id="pdf-list-export" className="print-document bg-white w-[210mm] min-h-[297mm] p-[10mm]">
           <StudentListPrint students={students} />
         </div>
       </div>

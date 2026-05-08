@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Download, Printer } from 'lucide-react';
 import { useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -27,19 +28,27 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
     window.print();
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const element = document.getElementById('print-card-content');
     if (!element) return;
     
-    const opt = {
-      margin: 0,
-      filename: `The_Thieu_Nhi_${student.name}.pdf`,
-      image: { type: 'jpeg', quality: 1 },
-      html2canvas: { scale: 3, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: [86, 54], orientation: 'landscape' }
-    };
+    // Create canvas
+    const canvas = await html2canvas(element, {
+      scale: 3,
+      useCORS: true,
+      letterRendering: true,
+      backgroundColor: '#ffffff'
+    });
     
-    html2pdf().set(opt).from(element).save();
+    const imgData = canvas.toDataURL('image/jpeg', 1.0);
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: [86, 54],
+      orientation: 'landscape'
+    });
+    
+    pdf.addImage(imgData, 'JPEG', 0, 0, 86, 54);
+    pdf.save(`The_Thieu_Nhi_${student.name}.pdf`);
   };
 
   // Generate a JSON string containing the essential info for scanning/attendance
@@ -77,7 +86,7 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
       </DialogContent>
 
       {/* Hidden print document for both window.print and html2pdf */}
-      <div className="hidden">
+      <div className="absolute top-[-9999px] left-[-9999px]">
         <div id="print-card-content" className="print-document">
           <StudentCardPreview student={student} qrData={qrData} printMode />
         </div>

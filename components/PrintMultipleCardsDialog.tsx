@@ -7,7 +7,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import html2pdf from 'html2pdf.js';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { Download, Printer } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -24,19 +25,41 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
     window.print();
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const element = document.getElementById('pdf-multiple-cards-export');
     if (!element) return;
     
-    const opt = {
-      margin: 5,
-      filename: `The_Thieu_Nhi_Hang_Loat.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      letterRendering: true,
+      backgroundColor: '#ffffff'
+    });
     
-    html2pdf().set(opt).from(element).save();
+    const imgWidth = 210;
+    const pageHeight = 297;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    });
+    
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    
+    while (heightLeft >= 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    
+    pdf.save(`The_Thieu_Nhi_Hang_Loat.pdf`);
   };
 
   return (
@@ -74,7 +97,7 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
         </DialogFooter>
       </DialogContent>
 
-      <div className="hidden">
+      <div className="absolute top-[-9999px] left-[-9999px]">
         <div id="pdf-multiple-cards-export" className="print-document bg-white w-[210mm] p-[10mm]">
           <div className="grid grid-cols-2 gap-[10mm]">
             {students.map(student => (
