@@ -43,37 +43,44 @@ export function PrintClassDialog({
     const element = document.getElementById('pdf-class-export');
     if (!element) return;
     
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      letterRendering: true,
-      backgroundColor: '#ffffff'
-    });
-    
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: 'a4',
-      orientation: 'portrait'
-    });
-    
-    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
+    const container = document.getElementById('pdf-class-container');
+    if (container) container.classList.remove('hidden');
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      });
+      
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`Bao_Cao_${type}_${subject?.name || 'Class'}.pdf`);
+    } finally {
+      if (container) container.classList.add('hidden');
     }
-    
-    pdf.save(`Bao_Cao_${type}_${subject?.name || 'Class'}.pdf`);
   };
 
   const getTitle = () => {
@@ -117,7 +124,7 @@ export function PrintClassDialog({
         </DialogFooter>
       </DialogContent>
 
-      <div className="absolute top-[-9999px] left-[-9999px]">
+      <div id="pdf-class-container" className="hidden">
         <div id="pdf-class-export" className="print-document bg-white w-[210mm] min-h-[297mm] p-[10mm]">
           <ClassPrint 
             type={type}

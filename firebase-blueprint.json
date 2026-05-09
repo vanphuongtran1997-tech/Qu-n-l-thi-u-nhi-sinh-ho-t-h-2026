@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Student information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "grade": { "type": "string" },
+        "catechismClass": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "parentPhone": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Inactive"] },
+        "evaluation": { "type": "string" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "name", "dateOfBirth", "gender", "grade", "catechismClass"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "Subject information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name"]
+    },
+    "Enrollment": {
+      "title": "Enrollment",
+      "description": "Student enrollment in a subject",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "score": { "type": "string" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["studentId", "subjectId"]
+    },
+    "Attendance": {
+      "title": "Attendance",
+      "description": "Student attendance for a subject on a date",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "date": { "type": "string" },
+        "present": { "type": "boolean" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["studentId", "subjectId", "date", "present"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "Teacher information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "password": { "type": "string" },
+        "phone": { "type": "string" },
+        "assignedSubjectIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "name", "username"]
+    }
+  },
+  "firestore": {
+    "students/{studentId}": {
+      "schema": { "$ref": "#/entities/Student" },
+      "description": "Stores student data"
+    },
+    "subjects/{subjectId}": {
+      "schema": { "$ref": "#/entities/Subject" },
+      "description": "Stores subjects/classes"
+    },
+    "enrollments/{enrollmentId}": {
+      "schema": { "$ref": "#/entities/Enrollment" },
+      "description": "Stores student enrollments in subjects"
+    },
+    "attendances/{attendanceId}": {
+      "schema": { "$ref": "#/entities/Attendance" },
+      "description": "Stores attendance records"
+    },
+    "teachers/{teacherId}": {
+      "schema": { "$ref": "#/entities/Teacher" },
+      "description": "Stores teacher records"
+    }
+  }
+}

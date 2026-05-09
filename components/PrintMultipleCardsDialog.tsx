@@ -29,37 +29,44 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
     const element = document.getElementById('pdf-multiple-cards-export');
     if (!element) return;
     
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      letterRendering: true,
-      backgroundColor: '#ffffff'
-    });
-    
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
-    
-    const imgData = canvas.toDataURL('image/jpeg', 0.98);
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: 'a4',
-      orientation: 'portrait'
-    });
-    
-    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
+    const container = document.getElementById('pdf-multiple-cards-container');
+    if (container) container.classList.remove('hidden');
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = canvas.height * imgWidth / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+      
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4',
+        orientation: 'portrait'
+      });
+      
       pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
+      
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      
+      pdf.save(`The_Thieu_Nhi_Hang_Loat.pdf`);
+    } finally {
+      if (container) container.classList.add('hidden');
     }
-    
-    pdf.save(`The_Thieu_Nhi_Hang_Loat.pdf`);
   };
 
   return (
@@ -97,7 +104,7 @@ export function PrintMultipleCardsDialog({ open, onOpenChange, students }: Print
         </DialogFooter>
       </DialogContent>
 
-      <div className="absolute top-[-9999px] left-[-9999px]">
+      <div id="pdf-multiple-cards-container" className="hidden">
         <div id="pdf-multiple-cards-export" className="print-document bg-white w-[210mm] p-[10mm]">
           <div className="grid grid-cols-2 gap-[10mm]">
             {students.map(student => (

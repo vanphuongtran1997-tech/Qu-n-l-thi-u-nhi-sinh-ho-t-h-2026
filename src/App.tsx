@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { GraduationCap, LogOut } from 'lucide-react';
 import { Student, Subject, Enrollment, Attendance, Teacher } from '@/types';
-import { 
-  getStudents, saveStudents, generateId,
-  getSubjects, saveSubjects,
-  getEnrollments, saveEnrollments,
-  getAttendance, saveAttendance,
-  getTeachers, saveTeachers
-} from '@/lib/storage';
+import { generateId } from '@/lib/storage';
 import { StudentsTab } from '@/components/StudentsTab';
 import { SubjectsTab } from '@/components/SubjectsTab';
 import { ClassesTab } from '@/components/ClassesTab';
@@ -15,6 +9,8 @@ import { TeachersTab } from '@/components/TeachersTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 export default function App() {
   const [user, setUser] = useState<{ username: string; loginName: string; role: 'Admin' | 'Teacher' } | null>(null);
@@ -29,76 +25,51 @@ export default function App() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
 
   useEffect(() => {
-    // Initial data load
-    const loadedStudents = getStudents();
-    const loadedSubjects = getSubjects();
-    const loadedEnrollments = getEnrollments();
-    const loadedAttendances = getAttendance();
-    const loadedTeachers = getTeachers();
-    
-    if (loadedStudents.length === 0) {
-      // Mock data if empty
-      const mockStudents: Student[] = [
-        {
-          id: generateId(),
-          name: 'Phêrô Nguyễn Văn A',
-          dateOfBirth: '2015-01-15',
-          gender: 'Male',
-          email: 'nguyenvana@example.com',
-          phone: '',
-          grade: '5A1',
-          catechismClass: 'Rước Lễ 1',
-          fatherName: 'Giuse Nguyễn Văn Ba',
-          motherName: 'Maria Trần Thị Bốn',
-          parentPhone: '0987654321',
-          avatarUrl: '',
-          status: 'Active',
-        },
-        {
-          id: generateId(),
-          name: 'Maria Trần Thị B',
-          dateOfBirth: '2015-06-20',
-          gender: 'Female',
-          email: '',
-          phone: '',
-          grade: '5A2',
-          catechismClass: 'Rước Lễ 1',
-          fatherName: 'Phaolô Trần Văn Năm',
-          motherName: 'Anna Lê Thị Sáu',
-          parentPhone: '0123456789',
-          avatarUrl: '',
-          status: 'Active',
-        },
-      ];
-      setStudents(mockStudents);
-      saveStudents(mockStudents);
-    } else {
-      setStudents(loadedStudents);
-    }
+    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
+      const data: Student[] = [];
+      snap.forEach(d => data.push(d.data() as Student));
+      setStudents(data);
+    });
 
-    if (loadedSubjects.length === 0) {
-      const mockSubjects: Subject[] = [
-        { id: generateId(), name: 'Đàn Nhạc', description: 'Học đàn Organ cơ bản' },
-        { id: generateId(), name: 'Cắm Hoa', description: 'Cắm hoa nghệ thuật' }
-      ];
-      setSubjects(mockSubjects);
-      saveSubjects(mockSubjects);
-    } else {
-      setSubjects(loadedSubjects);
-    }
+    const unsubSubjects = onSnapshot(collection(db, 'subjects'), (snap) => {
+      const data: Subject[] = [];
+      snap.forEach(d => data.push(d.data() as Subject));
+      setSubjects(data);
+    });
 
-    if (loadedTeachers.length === 0) {
-      const mockTeachers: Teacher[] = [
-        { id: generateId(), name: 'Nguyễn Văn G', username: 'Gv001', password: 'gv001', phone: '0912345678', assignedSubjectIds: [] }
-      ];
-      setTeachers(mockTeachers);
-      saveTeachers(mockTeachers);
-    } else {
-      setTeachers(loadedTeachers);
-    }
+    const unsubEnrollments = onSnapshot(collection(db, 'enrollments'), (snap) => {
+      const data: Enrollment[] = [];
+      snap.forEach(d => {
+        const item = d.data() as Enrollment;
+        item.id = d.id;
+        data.push(item);
+      });
+      setEnrollments(data);
+    });
 
-    setEnrollments(loadedEnrollments);
-    setAttendances(loadedAttendances);
+    const unsubAttendances = onSnapshot(collection(db, 'attendances'), (snap) => {
+      const data: Attendance[] = [];
+      snap.forEach(d => {
+        const item = d.data() as Attendance;
+        item.id = d.id;
+        data.push(item);
+      });
+      setAttendances(data);
+    });
+
+    const unsubTeachers = onSnapshot(collection(db, 'teachers'), (snap) => {
+      const data: Teacher[] = [];
+      snap.forEach(d => data.push(d.data() as Teacher));
+      setTeachers(data);
+    });
+
+    return () => {
+      unsubStudents();
+      unsubSubjects();
+      unsubEnrollments();
+      unsubAttendances();
+      unsubTeachers();
+    };
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -134,100 +105,81 @@ export default function App() {
   };
 
   const handleSaveTeacher = (teacherData: any) => {
-    let updated;
+    let td = { ...teacherData };
     if ('id' in teacherData && teacherData.id) {
-      // keep existing password if not updated
       const existing = teachers.find(t => t.id === teacherData.id);
       if (existing && !teacherData.password) {
-        teacherData.password = existing.password;
+        td.password = existing.password;
       }
-      updated = teachers.map((t) => (t.id === teacherData.id ? teacherData : t));
     } else {
-      updated = [...teachers, { ...teacherData, id: generateId() }];
+      td.id = generateId();
     }
-    setTeachers(updated);
-    saveTeachers(updated);
+    setDoc(doc(db, 'teachers', td.id), td);
   };
 
   const handleDeleteTeacher = (id: string) => {
-    const updated = teachers.filter(t => t.id !== id);
-    setTeachers(updated);
-    saveTeachers(updated);
+    deleteDoc(doc(db, 'teachers', id));
   };
 
   const handleSaveStudent = (studentData: any, selectedSubjectIds?: string[]) => {
-    let updated;
     const isNew = !('id' in studentData) || !studentData.id;
     const studentId = isNew ? generateId() : studentData.id;
 
     const studentToSave = { ...studentData, id: studentId };
-
-    if (isNew) {
-      updated = [...students, studentToSave];
-    } else {
-      updated = students.map((s) => (s.id === studentId ? studentToSave : s));
-    }
-    setStudents(updated);
-    saveStudents(updated);
+    setDoc(doc(db, 'students', studentId), studentToSave);
 
     if (selectedSubjectIds !== undefined) {
-      const otherEnrollments = enrollments.filter(e => e.studentId !== studentId);
-      const newStudentEnrollments = selectedSubjectIds.map(subId => {
-        // preserve existing score if possible
-        const existing = enrollments.find(e => e.studentId === studentId && e.subjectId === subId);
-        return { 
-          studentId, 
-          subjectId: subId, 
-          score: existing?.score 
-        };
+      // Find old enrollments for this student missing from new list
+      const oldSubIds = enrollments.filter(e => e.studentId === studentId).map(e => e.subjectId);
+      const toDelete = oldSubIds.filter(id => !selectedSubjectIds.includes(id));
+      
+      toDelete.forEach(subId => {
+        const e = enrollments.find(en => en.studentId === studentId && en.subjectId === subId);
+        if (e && e.id) deleteDoc(doc(db, 'enrollments', e.id));
       });
-      const updatedEnrollments = [...otherEnrollments, ...newStudentEnrollments];
-      setEnrollments(updatedEnrollments);
-      saveEnrollments(updatedEnrollments);
+
+      selectedSubjectIds.forEach(subId => {
+        const existing = enrollments.find(e => e.studentId === studentId && e.subjectId === subId);
+        if (!existing) {
+          const eId = generateId();
+          setDoc(doc(db, 'enrollments', eId), {
+            id: eId,
+            studentId,
+            subjectId: subId,
+            score: ''
+          });
+        }
+      });
     }
   };
 
   const handleDeleteStudent = (id: string) => {
-    const updated = students.filter((s) => s.id !== id);
-    setStudents(updated);
-    saveStudents(updated);
+    deleteDoc(doc(db, 'students', id));
   };
 
   const handleSaveSubject = (subjectData: any) => {
-    let updated;
-    if ('id' in subjectData && subjectData.id) {
-      updated = subjects.map((s) => (s.id === subjectData.id ? subjectData : s));
-    } else {
-      updated = [...subjects, { ...subjectData, id: generateId() }];
-    }
-    setSubjects(updated);
-    saveSubjects(updated);
+    const s = { ...subjectData };
+    if (!s.id) s.id = generateId();
+    setDoc(doc(db, 'subjects', s.id), s);
   };
 
   const handleDeleteSubject = (id: string) => {
-    const updated = subjects.filter((s) => s.id !== id);
-    setSubjects(updated);
-    saveSubjects(updated);
+    deleteDoc(doc(db, 'subjects', id));
   };
 
   const handleUpdateEnrollments = (updatedEnrollments: Enrollment[]) => {
-    setEnrollments(updatedEnrollments);
-    saveEnrollments(updatedEnrollments);
+    updatedEnrollments.forEach(en => {
+      const eId = en.id || generateId();
+      setDoc(doc(db, 'enrollments', eId), { ...en, id: eId });
+    });
   };
 
   const handleUpdateAttendance = (att: Attendance) => {
-    const existingIndex = attendances.findIndex(a => 
+    const existing = attendances.find(a => 
       a.studentId === att.studentId && a.subjectId === att.subjectId && a.date === att.date
     );
-    let updated;
-    if (existingIndex >= 0) {
-      updated = [...attendances];
-      updated[existingIndex] = att;
-    } else {
-      updated = [...attendances, att];
-    }
-    setAttendances(updated);
-    saveAttendance(updated);
+    const aId = existing && existing.id ? existing.id : generateId();
+    setDoc(doc(db, 'attendances', aId), { ...att, id: aId });
   };
 
   if (!user) {

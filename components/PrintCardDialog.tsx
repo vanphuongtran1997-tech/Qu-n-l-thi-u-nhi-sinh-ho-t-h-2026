@@ -32,23 +32,30 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
     const element = document.getElementById('print-card-content');
     if (!element) return;
     
-    // Create canvas
-    const canvas = await html2canvas(element, {
-      scale: 3,
-      useCORS: true,
-      letterRendering: true,
-      backgroundColor: '#ffffff'
-    });
-    
-    const imgData = canvas.toDataURL('image/jpeg', 1.0);
-    const pdf = new jsPDF({
-      unit: 'mm',
-      format: [86, 54],
-      orientation: 'landscape'
-    });
-    
-    pdf.addImage(imgData, 'JPEG', 0, 0, 86, 54);
-    pdf.save(`The_Thieu_Nhi_${student.name}.pdf`);
+    // Temporarily make it visible for html2canvas
+    const container = document.getElementById('print-card-container');
+    if (container) container.classList.remove('hidden');
+
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 3,
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff'
+      });
+      
+      const imgData = canvas.toDataURL('image/jpeg', 1.0);
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: [86, 54],
+        orientation: 'landscape'
+      });
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, 86, 54);
+      pdf.save(`The_Thieu_Nhi_${student.name}.pdf`);
+    } finally {
+      if (container) container.classList.add('hidden');
+    }
   };
 
   // Generate a JSON string containing the essential info for scanning/attendance
@@ -86,7 +93,7 @@ export function PrintCardDialog({ open, onOpenChange, student }: PrintCardDialog
       </DialogContent>
 
       {/* Hidden print document for both window.print and html2pdf */}
-      <div className="absolute top-[-9999px] left-[-9999px]">
+      <div id="print-card-container" className="hidden">
         <div id="print-card-content" className="print-document">
           <StudentCardPreview student={student} qrData={qrData} printMode />
         </div>

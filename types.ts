@@ -26,12 +26,14 @@ export interface Subject {
 export type NewSubject = Omit<Subject, 'id'>;
 
 export interface Enrollment {
+  id?: string;
   studentId: string;
   subjectId: string;
   score?: string; // Storing as string for flexibility in grading
 }
 
 export interface Attendance {
+  id?: string;
   studentId: string;
   subjectId: string;
   date: string; // YYYY-MM-DD
